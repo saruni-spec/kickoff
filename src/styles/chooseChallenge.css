@@ -1,0 +1,39 @@
+/* chooseChallenge.css */
+
+.chooseChallenge {
+    margin: 20px auto;
+    max-width: 600px;
+    padding: 20px;
+    border: 1px solid #ccc;
+    border-radius: 7px;
+    background-color: #f9f9f9;
+  }
+  
+  .chooseChallenge ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+  
+  .chooseChallenge li {
+    cursor: pointer;
+    padding: 10px 20px;
+    margin-bottom: 10px;
+    background-color: #ffffff;
+    border: 1px solid #ccc;
+    border-radius: 7px;
+    transition: background-color 0.3s ease;
+  }
+  
+  .chooseChallenge li:hover {
+    background-color: #f0f0f0;
+  }
+  
+  .chooseChallenge li:first-child {
+    margin-top: 0;
+  }
+  
+  .chooseChallenge li:last-child {
+    margin-bottom: 0;
+  }
+  

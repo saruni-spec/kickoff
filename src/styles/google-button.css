@@ -1,0 +1,18 @@
+.google-button {
+   
+    border: 1px solid #dddddd; /* Light gray border */
+    padding: 10px 20px; /* Padding for spacing */
+   
+    font-weight: bold; /* Bold text */
+    cursor: pointer; /* Indicate clickable button */
+    display: inline-block; /* Allow inline display */
+    text-align: center; /* Text centered within button */
+    text-decoration: none; /* Remove underline from text */
+    transition: background-color 0.2s ease-in-out; /* Smooth hover effect */
+    margin-top: 3%;
+    width: 50%;
+  }
+  
+  .google-button:hover {
+    background-color: #e7f1fa; /* Slightly lighter background on hover */
+  }

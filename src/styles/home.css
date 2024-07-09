@@ -1,0 +1,78 @@
+.container{
+  display: flex;
+  flex-direction: row;
+  width: 100%;
+  height: 90dvh;
+ 
+}
+
+.sideMenu{
+list-style-type: none;
+display: flex;
+flex-direction: column;
+justify-content: space-evenly;
+align-items: center;
+
+width: 20%;
+height: 50vh;
+position: absolute;
+top: 6rem;
+left: 1rem;
+background-color: #f9f9f9;
+padding: 0;
+}
+.sideMenu li{
+  width: 90%;
+  height: 20%;
+  cursor: pointer;
+  border-radius: 7px;
+ display: flex;
+ justify-content: center;
+ align-items: center;
+}
+.sideMenu li:hover{
+  background-color: rgb(191, 198, 204);
+}
+
+.selected{
+  background-color: rgb(151, 168, 185);
+}
+
+.home-div {
+    padding: 2.4%;
+    margin-left: 21%;
+    width: 80%;
+    
+    height: 95%;
+    margin-top: 0.1rem;
+    overflow-y: auto;
+  }
+
+  @media screen and (max-width: 768px){
+    .sideMenu{
+      flex-direction: row;
+      justify-content: space-evenly;
+      align-items: center;
+      
+      width: 100%;
+      height: 10vh;
+      position: absolute;
+      top: 3rem;
+      left: 0;
+     
+      }
+      .sideMenu li{
+        width: 20%;
+        height: 100%;
+        
+      }
+      .home-div {
+        padding: 5%;
+        margin-left: 0;
+        width: 100%;
+        
+        height: 95%;
+        margin-top: 13vh;
+       
+      }
+  }

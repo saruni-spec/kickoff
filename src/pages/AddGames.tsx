@@ -1,38 +1,61 @@
-import { auth, db } from "./firebase";
-import { addDoc, collection } from "firebase/firestore";
-import { onAuthStateChanged } from "firebase/auth";
+import { db } from "./firebase";
+import { addDoc, collection, getDocs, query } from "firebase/firestore";
+
 import { useEffect, useState } from "react";
-import Login from "./Login";
+
 import AddScores from "./AddScores";
+import AddTeams from "./AddTeams";
+
+import "../styles/addGames.css";
+
+interface TeamDetails {
+  teamName: string;
+  players: string[];
+}
 
 interface GameDetails {
   gameId: string;
-  homeTeam: string;
+  homeTeam: TeamDetails;
   homeTeamScore: string;
-  awayTeam: string;
+  awayTeam: TeamDetails;
   awayTeamScore: string;
   date: string;
   time: string;
   level: string;
   played: boolean;
 }
+interface Team {
+  team: string;
+  players: string[];
+}
 
 const AddGames = () => {
   const [currentPage, setCurrentPage] = useState("games");
-  const [gameDetails, setGameDetails] = useState<GameDetails>({
-    gameId: "",
-    homeTeam: "",
-    homeTeamScore: "",
-    awayTeam: "",
-    awayTeamScore: "",
-    date: "",
-    time: "",
-    level: "",
-    played: false,
-  });
-  const [isUserAuthenticated, setIsUserAuthenticated] = useState(true);
 
-  const addGame = async (gameDetails: GameDetails) => {
+  const [teams, setTeams] = useState<Team[]>();
+
+  const getTeams = async () => {
+    try {
+      const teamsQuery = query(collection(db, "teams"));
+      const teamsSnapshot = await getDocs(teamsQuery);
+
+      const allTeams: Team[] = [];
+      teamsSnapshot.forEach((doc) => {
+        const entry = {
+          team: doc.data().team,
+          players: doc.data().players,
+        };
+        allTeams.push(entry);
+      });
+
+      setTeams(allTeams);
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
+  const addGame = async (gameDetails: GameDetails | null) => {
+    if (!gameDetails) return;
     try {
       await addDoc(collection(db, "games"), {
         gameId: gameDetails.gameId,
@@ -45,6 +68,8 @@ const AddGames = () => {
         level: gameDetails.level,
         played: gameDetails.played,
       });
+
+      alert("Game added");
     } catch (error) {
       console.log(error);
     }
@@ -57,13 +82,12 @@ const AddGames = () => {
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const formData = new FormData(event.currentTarget);
-    console.log(formData);
 
     const newGameDetails: GameDetails = {
       gameId: GameId(),
-      homeTeam: formData.get("homeTeam") as string,
+      homeTeam: JSON.parse(formData.get("homeTeam") as string),
       homeTeamScore: "",
-      awayTeam: formData.get("awayTeam") as string,
+      awayTeam: JSON.parse(formData.get("awayTeam") as string),
       awayTeamScore: "",
       date: formData.get("date") as string,
       time: formData.get("time") as string,
@@ -71,45 +95,58 @@ const AddGames = () => {
       played: false,
     };
 
-    setGameDetails(newGameDetails);
-
-    addGame(gameDetails);
+    addGame(newGameDetails);
   };
+
+  useEffect(() => {
+    getTeams();
+  }, []);
 
   return (
     <>
-      <ul>
+      <ul className="add-gamesNav">
         <li onClick={() => setCurrentPage("games")}>Add Games</li>
         <li onClick={() => setCurrentPage("scores")}>Update Scores</li>
+        <li onClick={() => setCurrentPage("teams")}>Add Teams</li>
       </ul>
-      {isUserAuthenticated ? (
-        <>
-          {currentPage === "games" && (
-            <form onSubmit={handleSubmit}>
-              <label>
-                <input type="string" placeholder="level" name="level" />
-              </label>
-              <label>
-                <input type="date" placeholder="date" name="date" />
-              </label>
-              <label>
-                <input type="time" title="HH:MM" name="time" />
-              </label>
-              <label>
-                <input type="text" placeholder="Team" name="homeTeam" />
-              </label>
-              <p>Vs</p>
-              <label>
-                <input type="text" placeholder="Team" name="awayTeam" />
-              </label>
-              <button type="submit">Add</button>
-            </form>
-          )}
-          {currentPage === "scores" && <AddScores />}
-        </>
-      ) : (
-        <Login />
+
+      {currentPage === "games" && (
+        <form onSubmit={handleSubmit} className="addGamesForm">
+          <label>
+            <input type="string" placeholder="level" name="level" />
+          </label>
+          <label>
+            <input type="date" placeholder="date" name="date" />
+          </label>
+          <label>
+            <input type="time" title="HH:MM" name="time" />
+          </label>
+          <label>
+            <select title="homeTeam" name="homeTeam" onChange={() => {}}>
+              <option value="">Select Team</option>
+              {teams?.map((team, index) => (
+                <option key={index} value={JSON.stringify(team)}>
+                  {team.team}
+                </option>
+              ))}
+            </select>
+          </label>
+          <p>Vs</p>
+          <label>
+            <select title="awayTeam" name="awayTeam" onChange={() => {}}>
+              <option value="">Select Team</option>
+              {teams?.map((team, index) => (
+                <option key={index} value={JSON.stringify(team)}>
+                  {team.team}
+                </option>
+              ))}
+            </select>
+          </label>
+          <button type="submit">Add</button>
+        </form>
       )}
+      {currentPage === "scores" && <AddScores />}
+      {currentPage === "teams" && <AddTeams />}
     </>
   );
 };

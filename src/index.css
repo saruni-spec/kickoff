@@ -11,16 +11,49 @@
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+
+
+ 
+}
+html, body {
+  height: 100%;
+  margin: 0;
+  padding: 0;
 }
 
+
+
+#root {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
 
 
 body {
   margin: 0;
   display: flex;
-  
+ 
   min-width: 320px;
   min-height: 100vh;
+  width: 100%;
+  flex-direction: column;
+ 
+}
+*{
+  box-sizing: border-box;
 }
 
+input{
+  background-color: #ffffff;
+  border: 1px solid #ccc;
+  border-radius: 7px;
+  color: blue;
+}
+button{
+  border-radius: 7px;
+  margin: 2px;
+  padding: 0.4rem 1rem;
+
+}
 

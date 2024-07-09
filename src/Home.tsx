@@ -5,29 +5,85 @@ import ChooseChallenge from "./pages/ChooseChallenge";
 import CreateChallenge from "./pages/CreateChallenge";
 import Login from "./pages/Login";
 import "./styles/nav.css";
+import "./styles/home.css";
 
-import { db } from "./pages/firebase";
-import { getDocs, collection, query } from "firebase/firestore";
+import { auth, db } from "./pages/firebase";
+import { getDocs, collection, query, where } from "firebase/firestore";
 import { useEffect, useState } from "react";
+import Profile from "./pages/Profile";
+import Loading from "./components/Loading";
 
+interface TeamDetails {
+  team: string;
+  players: string[];
+}
 interface GameDetails {
   gameId: string;
-  homeTeam: string;
+  homeTeam: TeamDetails;
   homeTeamScore: string;
-  awayTeam: string;
+  awayTeam: TeamDetails;
   awayTeamScore: string;
   date: string;
   time: string;
   level: string;
+  played: boolean;
+}
+
+interface UserPrediction {
+  game: string;
+  prediction: string;
+}
+interface Predictions {
+  [key: string]: UserPrediction;
+}
+interface ChallengeDetails {
+  name: string;
+  stake: string;
+  gamesChosen: GameDetails[];
+  predictions: Predictions[];
+  challenge: string | null;
+}
+interface userDetails {
+  email: string;
+  phone: string;
+  account: number;
+}
+
+interface Challenge {
+  name: string;
+  challenge: string;
+  gamesInPrediction: GameDetails[];
+  stake: number;
+  predictions: Predictions[];
+  status: "active" | "closed";
+  createdBy: string;
+  members: string[];
+  winner: string | null;
+  earliestGameDate: string;
+  earliestGameTime: string;
 }
 
 function Home() {
   const [currentPage, setCurrentPage] = useState("home");
 
-  const [games, setGames] = useState<GameDetails[]>();
-  const [gamesToday, setGamesToday] = useState<GameDetails[]>();
-  const [gamesYesterday, setGamesYesterday] = useState<GameDetails[]>();
-  const [gamesUpcoming, setGamesUpcoming] = useState<GameDetails[]>();
+  const [games, setGames] = useState<GameDetails[] | null>(null);
+  const [gamesToday, setGamesToday] = useState<GameDetails[] | null>(null);
+  const [gamesYesterday, setGamesYesterday] = useState<GameDetails[] | null>(
+    null
+  );
+  const [gamesUpcoming, setGamesUpcoming] = useState<GameDetails[] | null>(
+    null
+  );
+  const [user, setUser] = useState<string>("");
+  const [userDetails, setUserDetails] = useState<userDetails | null>(null);
+  const [challengeDetails, setChallengeDetails] =
+    useState<ChallengeDetails | null>(null);
+  const [joinDetails, setJoinDetails] = useState<Challenge | null>(null);
+  const [notJoinedChallenges, setNotJoinedChallenges] = useState<Challenge[]>(
+    []
+  );
+  const [joinedChallenges, setJoinedChallenges] = useState<Challenge[]>([]);
+  const [loading, setLoading] = useState(true);
 
   const checkGameDates = (games: GameDetails[]) => {
     const today = new Date();
@@ -63,12 +119,8 @@ function Home() {
       const gamesQuery = query(collection(db, "games"));
       const gamesSnapshot = await getDocs(gamesQuery);
 
-      console.log(gamesSnapshot);
-
       const allGames: GameDetails[] = [];
       gamesSnapshot.forEach((doc) => {
-        console.log(doc.data(), "doc.data()");
-        console.log(doc.data().homeTeam, "doc.data().homeTeam");
         const entry = {
           gameId: doc.data().gameId,
           homeTeam: doc.data().homeTeam,
@@ -78,11 +130,11 @@ function Home() {
           date: doc.data().date,
           time: doc.data().time,
           level: doc.data().level,
+          played: doc.data().played,
         };
         allGames.push(entry);
       });
 
-      console.log(allGames);
       setGames(allGames);
       checkGameDates(allGames);
     } catch (error) {
@@ -90,40 +142,213 @@ function Home() {
     }
   };
 
+  const loadUserDetails = async (email: string | null) => {
+    const userQuery = query(
+      collection(db, "KUsers"),
+      where("email", "==", email)
+    );
+
+    const querySnapshot = await getDocs(userQuery);
+
+    if (querySnapshot.empty) {
+      setUserDetails(null);
+    } else {
+      const userDetails = querySnapshot.docs.map((doc) => doc.data());
+      setUserDetails(
+        userDetails[0] as {
+          email: string;
+          phone: string;
+          account: number;
+        }
+      );
+    }
+  };
+
+  const getFIlteredChallanges = (user: string, challenges: Challenge[]) => {
+    const otherChallenges = challenges.filter(
+      (challenge) => challenge.createdBy !== user
+    );
+
+    const notJoinedChallenges = otherChallenges.filter(
+      (challenge) => !challenge.members.includes(user)
+    );
+    setNotJoinedChallenges(notJoinedChallenges);
+
+    const userChallenges = challenges.filter(
+      (challenge) => challenge.createdBy === user
+    );
+    const memberChallenges = challenges.filter((challenge) =>
+      challenge.members.includes(user)
+    );
+    const allUserChallenges = [...userChallenges, ...memberChallenges];
+    setJoinedChallenges(allUserChallenges);
+  };
+  const getChallenges = async (user: string) => {
+    try {
+      const now = new Date();
+      const twoMinutesFromNow = new Date(now.getTime() + 2 * 60 * 1000); // Add 2 minutes in milliseconds
+
+      const formattedTwoMinutesFromNow = twoMinutesFromNow
+        .toISOString()
+        .split("T")[0];
+
+      const challengesQuery = query(
+        collection(db, "challenges"),
+        where("earliestGameDate", ">", formattedTwoMinutesFromNow)
+      );
+
+      const challengesSnapshot = await getDocs(challengesQuery);
+      const challengesData: Challenge[] = [];
+
+      challengesSnapshot.forEach((doc) => {
+        const data = doc.data() as Challenge;
+
+        challengesData.push(data);
+      });
+
+      getFIlteredChallanges(user, challengesData);
+    } catch (error) {
+      console.error("Error fetching challenges:", error);
+    }
+  };
+
   useEffect(() => {
-    loadGames();
-  }, []);
+    const timeoutId = setTimeout(() => {
+      const unsubscribe = auth.onAuthStateChanged((user) => {
+        if (user) {
+          if (user.email) {
+            setUser(user.email);
+
+            loadGames();
+
+            loadUserDetails(user.email);
+            getChallenges(user.email);
+          }
+        } else {
+          loadGames();
+        }
+        setLoading(false);
+      });
+
+      return () => unsubscribe();
+    }, 1500);
+
+    return () => clearTimeout(timeoutId);
+  }, [loading]);
 
   return (
     <>
-      <ul>
-        <li onClick={() => setCurrentPage("home")}>Home</li>
-        <li onClick={() => setCurrentPage("choose")}>Create Challenge</li>
-        <li onClick={() => setCurrentPage("view")}>View Challenges</li>
-        <li onClick={() => setCurrentPage("about")}>About</li>
-        <li onClick={() => setCurrentPage("login")}>Log In</li>
-      </ul>
-      <div>
-        {currentPage === "home" && (
-          <Games
-            gamesToday={gamesToday}
-            gamesUpcoming={gamesUpcoming}
-            games={games}
-            gamesYesterday={gamesYesterday}
-          />
-        )}
-        {currentPage === "choose" && (
-          <ChooseChallenge setCurrentPage={setCurrentPage} />
-        )}
-        {currentPage === "view" && <Challenges />}
-        {currentPage === "about" && <About />}
-        {currentPage === "login" && <Login />}
-        {currentPage === "create" && (
-          <CreateChallenge
-            gamesToday={gamesToday}
-            gamesUpcoming={gamesUpcoming}
-          />
-        )}
+      <nav>
+        <ul>
+          <li onClick={() => setCurrentPage("home")}>
+            <p id="pageName">Kick Off Challenge</p>
+          </li>
+          {userDetails && (
+            <li>
+              <p>Account : {userDetails.account}</p>
+            </li>
+          )}
+          <li onClick={() => setCurrentPage("login")}>
+            <p>Log In</p>
+          </li>
+        </ul>
+      </nav>
+      <div className="container">
+        <ul className="sideMenu">
+          <li
+            className={currentPage === "choose" ? "selected" : ""}
+            onClick={() => setCurrentPage("choose")}
+          >
+            Create
+          </li>
+          <li
+            className={currentPage === "view" ? "selected" : ""}
+            onClick={() => setCurrentPage("view")}
+          >
+            View
+          </li>
+          <li
+            className={currentPage === "profile" ? "selected" : ""}
+            onClick={() => setCurrentPage("profile")}
+          >
+            Profile
+          </li>
+          <li
+            className={currentPage === "about" ? "selected" : ""}
+            onClick={() => setCurrentPage("about")}
+          >
+            About
+          </li>
+        </ul>
+        <div className="home-div">
+          {loading ? (
+            <Loading />
+          ) : (
+            <>
+              {currentPage === "home" && games && (
+                <Games
+                  gamesToday={gamesToday}
+                  gamesUpcoming={gamesUpcoming}
+                  games={games}
+                  gamesYesterday={gamesYesterday}
+                />
+              )}
+              {currentPage === "choose" && (
+                <ChooseChallenge
+                  setCurrentPage={setCurrentPage}
+                  challengeDetails={challengeDetails}
+                />
+              )}
+              {currentPage === "view" && (
+                <Challenges
+                  user={user}
+                  setMainPage={setCurrentPage}
+                  setUserDetails={setUserDetails}
+                  userDetails={userDetails}
+                  setJoinDetails={setJoinDetails}
+                  joinDetails={joinDetails}
+                  joinedChallenges={joinedChallenges}
+                  notJoinedChallenges={notJoinedChallenges}
+                  setLoading={setLoading}
+                />
+              )}
+              {currentPage === "about" && <About />}
+              {currentPage === "login" && (
+                <Login
+                  setUser={setUser}
+                  setUserDetails={setUserDetails}
+                  setCurrentPage={setCurrentPage}
+                  setLoading={setLoading}
+                />
+              )}
+              {currentPage === "create" && (
+                <CreateChallenge
+                  user={user}
+                  gamesToday={gamesToday}
+                  gamesUpcoming={gamesUpcoming}
+                  setMainPage={setCurrentPage}
+                  userDetails={userDetails}
+                  setUserDetails={setUserDetails}
+                  setChallengeDetails={setChallengeDetails}
+                  challengeDetails={challengeDetails}
+                  setLoading={setLoading}
+                />
+              )}
+              {currentPage === "profile" && (
+                <>
+                  <Profile
+                    joinedChallenges={joinedChallenges}
+                    userDetails={userDetails}
+                    setUserDetails={setUserDetails}
+                    userEmail={user}
+                    setLoading={setLoading}
+                    setMainPage={setCurrentPage}
+                  />
+                </>
+              )}
+            </>
+          )}
+        </div>
       </div>
     </>
   );

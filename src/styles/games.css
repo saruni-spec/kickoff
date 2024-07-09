@@ -1,5 +1,78 @@
-.games{
-list-style-type: none;
-display: flex;
-flex-direction: column;
-}
+/* games.css */
+
+/* Style for the navigation bar */
+.gameDates {
+    list-style: none;
+    padding: 0;
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+    margin: 20px 0;
+    
+  }
+  
+  .gameDates li {
+    cursor: pointer;
+    font-size: 18px;
+    font-weight: bold;
+    color: #000044;
+  }
+  
+  .gameDates li:hover {
+    text-decoration: underline;
+  }
+  .underlined{
+    text-decoration: underline;
+  }
+  /* Style for the games list */
+  .games {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display:flex;
+   flex-direction: column;
+   align-items: center;
+   width: 100%;
+  }
+  
+  .games li {
+    width: 90%;
+    border: 1px solid #ddd;
+    border-radius: 7px;
+    padding: 20px;
+    margin-bottom: 20px;
+    background-color: #f9f9f9;
+    color: #333;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  .games li:hover{
+    background-color: rgb(37, 109, 180);
+    color: white;
+  }
+  
+  .games p {
+    font-size: 16px;
+   
+    margin: 5px 0;
+  }
+  
+  .itemNotAvailable {
+    border: 1px solid #ddd;
+    border-radius: 7px;
+    padding: 20px;
+    margin-bottom: 20px;
+    background-color: #f9f9f9;
+    color: #333;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+
+  }
+  .itemNotAvailable button{
+    border: none;
+    background-color: transparent;
+    color: #333;
+  }
+  

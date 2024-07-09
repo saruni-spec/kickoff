@@ -1,0 +1,71 @@
+{
+
+  "hosting": {
+
+    "site": "kickoff-challenge-football",
+
+    "public": "public",
+
+    ...
+
+  }
+
+}
+
+
+
+
+ /* 
+ 
+ import {
+  addDoc,
+  collection,
+  getDocs,
+  increment,
+  query,
+  updateDoc,
+  where,
+} from "firebase/firestore";
+ 
+ const updateUserAccount = async (
+    amount: number,
+    userDetails: userDetails | null
+  ) => {
+    setCurrentPage("complete");
+    if (!userDetails) return;
+
+    try {
+      // Query the collection to find the document with the specified email
+      const userQuery = query(
+        collection(db, "KUsers"),
+        where("email", "==", userDetails.email)
+      );
+
+      const querySnapshot = await getDocs(userQuery);
+
+      if (querySnapshot.empty) {
+        console.error("No document found with the specified email.");
+        return;
+      }
+
+      // Assuming there's only one document per email
+      const userDoc = querySnapshot.docs[0];
+
+      // Update the document
+      await updateDoc(userDoc.ref, {
+        account: increment(amount),
+      });
+
+      const newUserDetails = {
+        email: userDetails.email,
+        phone: userDetails.phone,
+        account: Number(userDetails.account) + Number(amount),
+      };
+      setUserDetails(newUserDetails);
+
+      console.log(`User account updated. Added ${amount}`);
+    } catch (error) {
+      console.error("Error updating user account:", error);
+    }
+  };
+*/

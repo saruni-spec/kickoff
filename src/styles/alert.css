@@ -1,0 +1,19 @@
+div{
+    width:30svw;
+    height: 25svh;
+border-radius: 7px;
+
+position: fixed;
+top: 30%;
+left: 30%;
+z-index: 1;
+
+}
+p{
+    color: rgb(44, 44, 148);
+}
+button{
+    width: 10%;
+    height: 10%;
+    background-color: rgb(101, 101, 124);
+}

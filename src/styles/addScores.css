@@ -1,0 +1,63 @@
+/* addScores.css */
+
+/* Style for the main list */
+.addScores {
+    list-style: none;
+    padding: 0;
+    margin: 20px auto;
+    max-width: 600px;
+  }
+  
+  /* Style for each list item */
+  .addScores li {
+    border: 1px solid #ddd;
+    border-radius: 7px;
+    padding: 20px;
+    margin-bottom: 20px;
+    background-color: #f9f9f9;
+  }
+  
+  /* Style for the form inside each list item */
+  .addScores form {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  
+  .addScores form label {
+    display: flex;
+    flex-direction: column;
+    font-weight: bold;
+    color: #003366;
+  }
+  
+  .addScores form input[type="text"],
+  .addScores form input[type="number"] {
+    padding: 8px;
+    font-size: 16px;
+    margin-top: 5px;
+    border: 1px solid #ccc;
+    border-radius: 7px;
+  }
+  
+  .addScores form button {
+    padding: 10px;
+    font-size: 18px;
+    background-color: #003366;
+    color: #fff;
+    border: none;
+    
+    cursor: pointer;
+  }
+  
+  .addScores form button:hover {
+    background-color: #0055cc;
+  }
+  
+  /* Style for the game details */
+  .addScores div {
+    font-size: 16px;
+    color: #333;
+    margin-top: 5px;
+  }
+  

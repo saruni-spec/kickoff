@@ -1,0 +1,75 @@
+/* addGames.css */
+
+/* Style for the navigation bar */
+.add-gamesNav {
+    background-color: #003366; /* Dark blue background */
+    padding: 10px;
+    display: flex;
+    justify-content: center;
+    list-style: none;
+    gap: 20px;
+    margin: 0;
+  }
+  
+  .add-gamesNav li {
+    color: #ffffff; /* White text */
+    cursor: pointer;
+    font-size: 18px;
+    font-weight: bold;
+  }
+  
+  .add-gamesNav li:hover {
+    text-decoration: underline;
+  }
+  
+  /* Style for the form */
+  .addGamesForm {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    max-width: 400px;
+    margin: 20px auto;
+    padding: 20px;
+    border: 1px solid #ddd;
+    border-radius: 7px;
+    background-color: #f9f9f9;
+  }
+  
+  .addGamesForm label {
+    display: flex;
+    flex-direction: column;
+    font-weight: bold;
+    color: #003366;
+  }
+  
+  .addGamesForm input,
+  .addGamesForm select {
+    padding: 8px;
+    font-size: 16px;
+    margin-top: 5px;
+    border: 1px solid #ccc;
+    border-radius: 7px;
+  }
+  
+  .addGamesForm button {
+    padding: 10px;
+    font-size: 18px;
+    background-color: #003366;
+    color: #fff;
+    border: none;
+    
+    cursor: pointer;
+  }
+  
+  .addGamesForm button:hover {
+    background-color: #0055cc;
+  }
+  
+  /* Additional styles */
+  .addGamesForm p {
+    text-align: center;
+    font-size: 18px;
+    font-weight: bold;
+    color: #333;
+  }
+  

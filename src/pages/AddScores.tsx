@@ -5,15 +5,20 @@ import {
   query,
   where,
   updateDoc,
-  doc,
 } from "firebase/firestore";
 import { useEffect, useState } from "react";
+import "../styles/addScores.css";
+
+interface Team {
+  team: string;
+  players: string[];
+}
 
 interface GameDetails {
   gameId: string;
-  homeTeam: string;
+  homeTeam: Team;
   homeTeamScore: string;
-  awayTeam: string;
+  awayTeam: Team;
   awayTeamScore: string;
   date: string;
   time: string;
@@ -78,7 +83,6 @@ const AddScores = () => {
           awayTeamScore: awayTeamScore,
           played: true,
         });
-        console.log("Document successfully updated");
       } else {
         console.log("No matching document found");
       }
@@ -105,7 +109,7 @@ const AddScores = () => {
   };
 
   return (
-    <ul>
+    <ul className="addScores">
       {games &&
         games.map((game, index) => (
           <li key={index}>
@@ -116,16 +120,17 @@ const AddScores = () => {
                   value={game.gameId}
                   placeholder={game.gameId}
                   name="gameId"
+                  onChange={() => {}}
                 />
               </label>
               <div>Date: {game.date}</div>
               <div>Time: {game.time}</div>
               <div>Level: {game.level}</div>
               <div>
-                Home Team: {game.homeTeam} - Score: {game.homeTeamScore}
+                Home Team: {game.homeTeam.team} - Score: {game.homeTeamScore}
               </div>
               <div>
-                Away Team: {game.awayTeam} - Score: {game.awayTeamScore}
+                Away Team: {game.awayTeam.team} - Score: {game.awayTeamScore}
               </div>
               <label>
                 <input

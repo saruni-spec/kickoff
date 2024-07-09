@@ -1,0 +1,73 @@
+/* login.css */
+
+.loginForm {
+    width: 55%;
+    margin: 20px auto;
+    padding: 20px;
+    border: 1px solid #ccc;
+    border-radius: 7px;
+    background-color: #f9f9f9;
+    min-height: 70vh;
+  }
+  
+  .loginForm label {
+    display: block;
+    margin-bottom: 3%;
+  }
+  
+  .loginForm input {
+    width: calc(100% - 20px);
+    padding: 3%;
+    margin-top: 3%;
+    
+    height: 10%;
+    
+    font-size: 16px;
+  }
+  
+  .loginForm button {
+    display: block;
+    width: calc(100% - 20px);
+    padding: 10px;
+    background-color: #007bff;
+    color: #fff;
+    border: none;
+    margin-top: 10%;
+    cursor: pointer;
+    font-size: 16px;
+  }
+  
+  .loginForm button:hover {
+    background-color: #0056b3;
+  }
+  
+  .loginForm button:disabled {
+    background-color: #ccc;
+    cursor: not-allowed;
+  }
+  
+  .loginForm button:disabled:hover {
+    background-color: #ccc;
+  }
+  
+  .loginForm .error {
+    color: #dc3545;
+    margin-top: 5px;
+  }
+
+  #checkBox{
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+  }
+  
+  @media screen and (max-width: 768px){
+    .loginForm {
+      width: 90%;
+      height: 60%;
+      
+    }
+   
+
+  
+  }
