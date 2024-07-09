@@ -39,17 +39,23 @@ interface ChallengeDetails {
 interface ChooseInterface {
   setCurrentPage: (page: string) => void;
   challengeDetails: ChallengeDetails | null;
+  user: string;
 }
 
 const ChooseChallenge: React.FC<ChooseInterface> = ({
   setCurrentPage,
   challengeDetails,
+  user,
 }) => {
   const navigate = useNavigate();
 
   const handleChallengeClick = (selectedChallenge: string) => {
-    navigate(`/?challenge=${selectedChallenge}`);
-    setCurrentPage("create");
+    if (user === "" || user === null || user === undefined) {
+      navigate("/login");
+    } else {
+      navigate(`/?challenge=${selectedChallenge}`);
+      setCurrentPage("create");
+    }
   };
 
   useEffect(() => {
@@ -62,6 +68,7 @@ const ChooseChallenge: React.FC<ChooseInterface> = ({
 
   return (
     <div className="chooseChallenge">
+      <p>Select a challenge,create a group and invite your friend to compete</p>
       <ul>
         <li onClick={() => handleChallengeClick("WinXLoose")}>Win X Loose</li>
         <li onClick={() => handleChallengeClick("ScorePredictions")}>

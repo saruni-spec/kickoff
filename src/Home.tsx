@@ -3,8 +3,7 @@ import Games from "./pages/Games";
 import Challenges from "./pages/Challenges";
 import ChooseChallenge from "./pages/ChooseChallenge";
 import CreateChallenge from "./pages/CreateChallenge";
-import Login from "./pages/Login";
-import "./styles/nav.css";
+
 import "./styles/home.css";
 
 import { auth, db } from "./pages/firebase";
@@ -12,6 +11,7 @@ import { getDocs, collection, query, where } from "firebase/firestore";
 import { useEffect, useState } from "react";
 import Profile from "./pages/Profile";
 import Loading from "./components/Loading";
+import { useNavigate } from "react-router-dom";
 
 interface TeamDetails {
   team: string;
@@ -78,12 +78,14 @@ function Home() {
   const [userDetails, setUserDetails] = useState<userDetails | null>(null);
   const [challengeDetails, setChallengeDetails] =
     useState<ChallengeDetails | null>(null);
-  const [joinDetails, setJoinDetails] = useState<Challenge | null>(null);
+
   const [notJoinedChallenges, setNotJoinedChallenges] = useState<Challenge[]>(
     []
   );
   const [joinedChallenges, setJoinedChallenges] = useState<Challenge[]>([]);
   const [loading, setLoading] = useState(true);
+
+  const navigate = useNavigate();
 
   const checkGameDates = (games: GameDetails[]) => {
     const today = new Date();
@@ -152,6 +154,7 @@ function Home() {
 
     if (querySnapshot.empty) {
       setUserDetails(null);
+      console.log("user not found");
     } else {
       const userDetails = querySnapshot.docs.map((doc) => doc.data());
       setUserDetails(
@@ -161,6 +164,7 @@ function Home() {
           account: number;
         }
       );
+      console.log("user loaded");
     }
   };
 
@@ -183,18 +187,17 @@ function Home() {
     const allUserChallenges = [...userChallenges, ...memberChallenges];
     setJoinedChallenges(allUserChallenges);
   };
+
   const getChallenges = async (user: string) => {
     try {
       const now = new Date();
-      const twoMinutesFromNow = new Date(now.getTime() + 2 * 60 * 1000); // Add 2 minutes in milliseconds
+      const twoMinutesFromNow = new Date(now.getTime() + 2 * 60 * 1000);
 
-      const formattedTwoMinutesFromNow = twoMinutesFromNow
-        .toISOString()
-        .split("T")[0];
+      const todayFormatted = now.toISOString().split("T")[0];
 
       const challengesQuery = query(
         collection(db, "challenges"),
-        where("earliestGameDate", ">", formattedTwoMinutesFromNow)
+        where("earliestGameDate", ">=", todayFormatted)
       );
 
       const challengesSnapshot = await getDocs(challengesQuery);
@@ -203,7 +206,28 @@ function Home() {
       challengesSnapshot.forEach((doc) => {
         const data = doc.data() as Challenge;
 
-        challengesData.push(data);
+        // Parse the time correctly
+        const [time, period] = data.earliestGameTime.split(" ");
+        const [hours, minutes] = time.split(":");
+        let gameHours = parseInt(hours);
+
+        if (period.toLowerCase() === "pm" && gameHours !== 12) {
+          gameHours += 12;
+        } else if (period.toLowerCase() === "am" && gameHours === 12) {
+          gameHours = 0;
+        }
+
+        const gameDateTime = new Date(
+          `${data.earliestGameDate}T${gameHours
+            .toString()
+            .padStart(2, "0")}:${minutes}:00`
+        );
+
+        console.log(gameDateTime, "gameDateTime");
+
+        if (gameDateTime > twoMinutesFromNow) {
+          challengesData.push(data);
+        }
       });
 
       getFIlteredChallanges(user, challengesData);
@@ -248,7 +272,7 @@ function Home() {
               <p>Account : {userDetails.account}</p>
             </li>
           )}
-          <li onClick={() => setCurrentPage("login")}>
+          <li onClick={() => navigate("/login")}>
             <p>Log In</p>
           </li>
         </ul>
@@ -295,6 +319,7 @@ function Home() {
               )}
               {currentPage === "choose" && (
                 <ChooseChallenge
+                  user={user}
                   setCurrentPage={setCurrentPage}
                   challengeDetails={challengeDetails}
                 />
@@ -302,25 +327,14 @@ function Home() {
               {currentPage === "view" && (
                 <Challenges
                   user={user}
-                  setMainPage={setCurrentPage}
-                  setUserDetails={setUserDetails}
                   userDetails={userDetails}
-                  setJoinDetails={setJoinDetails}
-                  joinDetails={joinDetails}
+                  setMainPage={setCurrentPage}
                   joinedChallenges={joinedChallenges}
                   notJoinedChallenges={notJoinedChallenges}
-                  setLoading={setLoading}
                 />
               )}
               {currentPage === "about" && <About />}
-              {currentPage === "login" && (
-                <Login
-                  setUser={setUser}
-                  setUserDetails={setUserDetails}
-                  setCurrentPage={setCurrentPage}
-                  setLoading={setLoading}
-                />
-              )}
+
               {currentPage === "create" && (
                 <CreateChallenge
                   user={user}

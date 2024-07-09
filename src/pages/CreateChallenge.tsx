@@ -8,7 +8,7 @@ import {
   where,
 } from "firebase/firestore";
 import { useEffect, useState } from "react";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { db } from "./firebase";
 import "../styles/challenges.css";
 import IntaSendButton from "../components/Intasend";
@@ -83,6 +83,7 @@ const CreateChallenge: React.FC<GamesInterface> = ({
   const [accountUpdated, setAccountUpdated] = useState(false);
 
   const location = useLocation();
+  const navigate = useNavigate();
 
   // Use URLSearchParams to parse the query parameters
   const queryParams = new URLSearchParams(location.search);
@@ -401,15 +402,19 @@ const CreateChallenge: React.FC<GamesInterface> = ({
   };
 
   useEffect(() => {
-    if (accountUpdated) {
-      updateUserAccount(Number(stake), userDetails);
+    if (user !== "" && user !== null && user !== undefined) {
+      navigate("/login");
     } else {
-      console.log("Account not updated");
-    }
-    if (challengeDetails !== null) {
-      setCurrentPage("complete");
-    } else {
-      setCurrentPage("predictions");
+      if (accountUpdated) {
+        updateUserAccount(Number(stake), userDetails);
+      } else {
+        console.log("Account not updated");
+      }
+      if (challengeDetails !== null) {
+        setCurrentPage("complete");
+      } else {
+        setCurrentPage("predictions");
+      }
     }
   }, [accountUpdated]);
 
@@ -479,6 +484,7 @@ const CreateChallenge: React.FC<GamesInterface> = ({
                 ).toString()}
                 setAccountUpdated={setAccountUpdated}
                 setCurrentPage={setCurrentPage}
+                page="complete"
               />
             </>
           )}
@@ -815,6 +821,7 @@ const CreateChallenge: React.FC<GamesInterface> = ({
                 ).toString()}
                 setAccountUpdated={setAccountUpdated}
                 setCurrentPage={setCurrentPage}
+                page="complete"
               />
             </>
           )}

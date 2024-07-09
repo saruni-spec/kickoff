@@ -62,6 +62,13 @@ const About = () => {
             If there are no winners, all staked amounts will be forfeited.
           </li>
           <li>
+            If there are multiple winners, the remaining winnings will be
+            distributed equally among the winners unless the number of winners
+            exceed 1/2. In this case,each member will recieve there stake
+            back.The winners will recieve the full stake amount while loosers
+            will recive 80% of their stake
+          </li>
+          <li>
             The group creator will clain 5% of the net possible winnings if they
             are not the winner
           </li>

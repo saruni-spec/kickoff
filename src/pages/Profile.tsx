@@ -11,6 +11,8 @@ import React, { useEffect, useState } from "react";
 import { auth, db } from "./firebase";
 import "../styles/profile.css";
 import axios from "axios";
+import IntaSendButton from "../components/Intasend";
+import { useNavigate } from "react-router-dom";
 interface TeamDetails {
   team: string;
   players: string[];
@@ -72,6 +74,11 @@ const Profile: React.FC<profileProps> = ({
 }) => {
   const [phone, setPhone] = useState("");
   const [withdrawAmount, setWithdrawAmount] = useState(""); // Add state for withdrawal amount
+  const [deposit, setDeposit] = useState(""); // Add state for deposit amount
+  const [accountUpdated, setAccountUpdated] = useState(false);
+  const [currentPage, setCurrentPage] = useState("profile");
+
+  const navigate = useNavigate();
 
   const updateUserAccount = async (phone: string, email: string) => {
     try {
@@ -189,65 +196,158 @@ const Profile: React.FC<profileProps> = ({
   };
 
   useEffect(() => {
-    if (userEmail === "" || userEmail === null) {
-      setMainPage("login");
+    if (userEmail === "" || userEmail === null || userEmail === undefined) {
+      navigate("login");
     }
-  }, [userEmail, setMainPage]);
+  }, []);
+
+  const updateUserAccountDeposit = async (
+    amount: number,
+    userDetails: userDetails | null
+  ) => {
+    setCurrentPage("complete");
+    if (!userDetails) return;
+
+    try {
+      // Query the collection to find the document with the specified email
+      const userQuery = query(
+        collection(db, "KUsers"),
+        where("email", "==", userDetails.email)
+      );
+
+      const querySnapshot = await getDocs(userQuery);
+
+      if (querySnapshot.empty) {
+        console.error("No document found with the specified email.");
+        await addDoc(collection(db, "KUsers"), {
+          email: userDetails.email,
+          phone: phone,
+          account: 0,
+        });
+
+        alert("User Details Created");
+        return;
+      }
+
+      // Assuming there's only one document per email
+      const userDoc = querySnapshot.docs[0];
+
+      // Update the document
+      await updateDoc(userDoc.ref, {
+        account: increment(amount),
+      });
+
+      const newUserDetails = {
+        email: userDetails.email,
+        phone: userDetails.phone,
+        account: Number(userDetails.account) + Number(amount),
+      };
+      setUserDetails(newUserDetails);
+      setDeposit("");
+    } catch (error) {
+      console.error("Error updating user account:", error);
+    }
+  };
+
+  useEffect(() => {
+    if (accountUpdated) {
+      updateUserAccountDeposit(Number(deposit), userDetails);
+    } else {
+      console.log("Account not updated");
+    }
+  }, [accountUpdated]);
 
   return (
     <div className="profile">
-      {userDetails ? (
+      {userEmail === "" || userEmail === null || userEmail === undefined ? (
         <>
-          <button type="button" onClick={logOut}>
-            Log Out
-          </button>
-
-          <input
-            type="number"
-            placeholder="Withdraw Amount"
-            value={withdrawAmount}
-            onChange={(e) => setWithdrawAmount(e.target.value)}
-          />
-          <button
-            type="button"
-            onClick={() => handleWithdraw(userDetails, withdrawAmount)}
-          >
-            Withdraw
-          </button>
-          <h2>{userDetails.email}</h2>
-          <h3>{userDetails.phone}</h3>
-          <h4>Account : {userDetails.account}</h4>
-
-          {joinedChallenges && (
-            <>
-              <h3>My Groups</h3>
-              <ul className="groupList">
-                {joinedChallenges.map((challenge, index) => (
-                  <li key={index}>
-                    <p>
-                      {challenge.challenge}:{challenge.status}
-                    </p>
-                    <p>Stake : {challenge.stake}</p>
-                  </li>
-                ))}
-              </ul>
-            </>
-          )}
+          <p>Login in to view profile</p>
         </>
       ) : (
         <>
-          <label>
-            <input
-              required
-              type="text"
-              placeholder="phone Number"
-              name="phone"
-              onChange={(e) => setPhone(e.target.value)}
-            />
-          </label>
-          <button type="button" onClick={() => addPhone(phone, userEmail)}>
-            Add Phone Number
-          </button>
+          {currentPage === "profile" && <></>}
+          {userDetails ? (
+            <>
+              <div className="profileCard">
+                <h3>{userDetails.email}</h3>
+                <h3>{userDetails.phone}</h3>
+                <h3>Account : {userDetails.account}</h3>
+              </div>
+
+              <div>
+                <div className="moneyBox">
+                  <label>
+                    Enter Amount to withdraw
+                    <input
+                      type="number"
+                      placeholder="Withdraw Amount"
+                      value={withdrawAmount}
+                      onChange={(e) => setWithdrawAmount(e.target.value)}
+                    />
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => handleWithdraw(userDetails, withdrawAmount)}
+                  >
+                    Withdraw
+                  </button>
+                </div>
+                <div className="moneyBox">
+                  <label>
+                    Enter Amount to deposit
+                    <input
+                      type="number"
+                      placeholder="Deposit Amount"
+                      value={deposit}
+                      onChange={(e) => setDeposit(e.target.value)}
+                    />
+                  </label>
+                  {deposit && (
+                    <IntaSendButton
+                      setAccountUpdated={setAccountUpdated}
+                      setCurrentPage={setCurrentPage}
+                      page="profile"
+                      amount={deposit}
+                    />
+                  )}
+                </div>
+              </div>
+              <button type="button" onClick={logOut}>
+                Log Out
+              </button>
+
+              {joinedChallenges && (
+                <div>
+                  <h3>My Groups</h3>
+                  <ul className="groupList">
+                    {joinedChallenges.map((challenge, index) => (
+                      <li key={index}>
+                        <p>
+                          {challenge.challenge}:{challenge.status}
+                        </p>
+                        <p>Stake : {challenge.stake}</p>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </>
+          ) : (
+            <>
+              <label>
+                <input
+                  required
+                  type="text"
+                  placeholder="phone Number"
+                  name="phone"
+                  onChange={(e) => setPhone(e.target.value)}
+                />
+              </label>
+              <button type="button" onClick={() => addPhone(phone, userEmail)}>
+                Add Phone Number
+              </button>
+            </>
+          )}
         </>
       )}
     </div>

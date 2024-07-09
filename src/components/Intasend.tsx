@@ -28,12 +28,14 @@ interface IntaSendButtonProps {
   amount: string;
   setCurrentPage: (page: string) => void;
   setAccountUpdated: (updated: boolean) => void;
+  page: string;
 }
 
 const IntaSendButton = ({
   amount,
   setCurrentPage,
   setAccountUpdated,
+  page,
 }: IntaSendButtonProps) => {
   const buttonRef = useRef<HTMLButtonElement>(null);
   const navigate = useNavigate();
@@ -49,7 +51,7 @@ const IntaSendButton = ({
             console.log("COMPLETE:", response);
             // Instead of an alert, update your UI here
             setAccountUpdated(true);
-            setCurrentPage("complete");
+            setCurrentPage(page);
             console.log(navigate);
             // Attempt to close IntaSend window (if it's in a popup)
             if (window.opener) {
@@ -60,7 +62,7 @@ const IntaSendButton = ({
             console.log("FAILED", response);
             // Instead of an alert, update your UI here
             console.log(navigate);
-            setCurrentPage("complete");
+            setCurrentPage(page);
             // Attempt to close IntaSend window (if it's in a popup)
             if (window.opener) {
               window.close();

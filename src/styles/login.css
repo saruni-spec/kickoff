@@ -1,13 +1,13 @@
 /* login.css */
 
 .loginForm {
-    width: 55%;
+    width: 30%;
     margin: 20px auto;
     padding: 20px;
     border: 1px solid #ccc;
     border-radius: 7px;
     background-color: #f9f9f9;
-    min-height: 70vh;
+    min-height: 50vh;
   }
   
   .loginForm label {
