@@ -19,9 +19,11 @@ interface GameDetails {
   played: boolean;
 }
 
+type prediction = string;
+type game = string;
+
 interface UserPrediction {
-  game: string;
-  prediction: string;
+  [game: game]: prediction;
 }
 
 interface Predictions {
@@ -32,7 +34,7 @@ interface ChallengeDetails {
   name: string;
   stake: string;
   gamesChosen: GameDetails[];
-  predictions: Predictions[];
+  predictions: Predictions;
   challenge: string | null;
 }
 

@@ -10,7 +10,7 @@ import {
 import { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { db } from "./firebase";
-import "../styles/challenges.css";
+import "../styles/createChallenge.css";
 import IntaSendButton from "../components/Intasend";
 
 interface TeamDetails {
@@ -46,9 +46,11 @@ interface GamesInterface {
   setLoading: (loading: boolean) => void;
 }
 
+type prediction = string;
+type game = string;
+
 interface UserPrediction {
-  game: string;
-  prediction: string;
+  [game: game]: prediction;
 }
 
 interface Predictions {
@@ -59,7 +61,7 @@ interface ChallengeDetails {
   name: string;
   stake: string;
   gamesChosen: GameDetails[];
-  predictions: Predictions[];
+  predictions: Predictions;
   challenge: string | null;
 }
 
@@ -88,56 +90,47 @@ const CreateChallenge: React.FC<GamesInterface> = ({
   // Use URLSearchParams to parse the query parameters
   const queryParams = new URLSearchParams(location.search);
   const challenge = queryParams.get("challenge"); // 'challenge' is the name of the query parameter
-
-  const [predictions, setPredictions] = useState<Predictions[]>([]);
+  const [userPredictions, setUserPredictions] = useState<UserPrediction | null>(
+    null
+  );
+  const [predictions, setPredictions] = useState<Predictions | null>(null);
+  const [selectedPredictions, setSelectedPredictions] = useState<{
+    [gameId: string]: string;
+  }>({});
+  const [homeGoals, setHomeGoals] = useState("");
+  const [awayGoals, setAwayGoals] = useState("");
 
   const addPrediction = (
     user: string,
     newPredictionValue: string,
     newPredictionKey: GameDetails
   ) => {
-    const newPrediction = {
-      [user]: {
-        game: `${newPredictionKey.homeTeam.team} vs ${newPredictionKey.awayTeam.team}`,
-        prediction: newPredictionValue,
-      },
-    };
+    setUserPredictions((prevPredictions) => ({
+      ...(prevPredictions || {}),
+      [`${newPredictionKey.homeTeam.team} vs ${newPredictionKey.awayTeam.team}`]:
+        newPredictionValue,
+    }));
 
-    const alreadyExists = predictions.some((prediction) => {
-      const key = Object.keys(prediction)[0];
-      return prediction[key].game === newPrediction[user].game;
+    setPredictions((prevPredictions) => {
+      const updatedUserPredictions = {
+        ...(userPredictions || {}),
+        [`${newPredictionKey.homeTeam.team} vs ${newPredictionKey.awayTeam.team}`]:
+          newPredictionValue,
+      };
+      return {
+        ...(prevPredictions || {}),
+        [user]: updatedUserPredictions,
+      };
     });
 
-    if (alreadyExists) {
-      const updatedPredictions = predictions.map((prediction) => {
-        const key = Object.keys(prediction)[0];
-        if (prediction[key].game === newPrediction[user].game) {
-          if (prediction[key].prediction !== newPrediction[user].prediction) {
-            // Update the prediction value
-            return {
-              [key]: {
-                ...prediction[key],
-                prediction: newPredictionValue,
-              },
-            };
-          }
-          // Return the original prediction if the value hasn't changed
-          return prediction;
-        }
-        return prediction;
-      });
-
-      setPredictions(updatedPredictions);
-    } else {
-      setPredictions((prevPredictions) => [...prevPredictions, newPrediction]);
-      setGamesChosen((prevGames) => [...prevGames, newPredictionKey]);
-    }
+    setGamesChosen((prevGames) => [...prevGames, newPredictionKey]);
   };
 
   const handleScores = (
     event: React.FormEvent<HTMLFormElement>,
     user: string,
-    game: GameDetails
+    game: GameDetails,
+    gameId: string
   ) => {
     event.preventDefault();
     const formData = new FormData(event.currentTarget);
@@ -145,13 +138,21 @@ const CreateChallenge: React.FC<GamesInterface> = ({
     const homeGoals = formData.get("home goals");
     const awayGoals = formData.get("away goals");
 
-    addPrediction(user, `${homeGoals} vs ${awayGoals}`, game);
+    addPrediction(
+      user,
+      `${game.homeTeam} [${homeGoals}] vs ${game.awayTeam} [${awayGoals}]`,
+      game
+    );
+    setSelectedPredictions((prev) => ({
+      ...prev,
+      [gameId]: `${game.homeTeam} [${homeGoals}] vs ${game.awayTeam} [${awayGoals}]`,
+    }));
   };
 
   const addChallenge = async (
     challengeName: string,
     stake: string,
-    predictions: Predictions[],
+    predictions: Predictions,
     challenge: string | null,
     games: GameDetails[],
     user: string
@@ -182,7 +183,7 @@ const CreateChallenge: React.FC<GamesInterface> = ({
     stake: string,
     userDetails: userDetails,
     challengeName: string,
-    predictions: Predictions[],
+    predictions: Predictions,
     challenge: string | null,
     games: GameDetails[]
   ) => {
@@ -212,7 +213,7 @@ const CreateChallenge: React.FC<GamesInterface> = ({
   const makePayment = async (
     challengeName: string,
     stake: string,
-    predictions: Predictions[],
+    predictions: Predictions,
     challenge: string | null,
     games: GameDetails[],
     phone: string,
@@ -402,7 +403,7 @@ const CreateChallenge: React.FC<GamesInterface> = ({
   };
 
   useEffect(() => {
-    if (user !== "" && user !== null && user !== undefined) {
+    if (user === "" && user === null && user === undefined) {
       navigate("/login");
     } else {
       if (accountUpdated) {
@@ -411,8 +412,11 @@ const CreateChallenge: React.FC<GamesInterface> = ({
         console.log("Account not updated");
       }
       if (challengeDetails !== null) {
+        console.log("complete page");
         setCurrentPage("complete");
       } else {
+        console.log("predictions page");
+
         setCurrentPage("predictions");
       }
     }
@@ -469,7 +473,7 @@ const CreateChallenge: React.FC<GamesInterface> = ({
                 Back
               </button>
               <button type="button" onClick={giveUpChallenge}>
-                Give Up
+                Cancel
               </button>
               <p>Current Amount in Account : {userDetails.account}</p>
               <p>Amount needed for the stake : {challengeDetails.stake}</p>
@@ -493,6 +497,9 @@ const CreateChallenge: React.FC<GamesInterface> = ({
         <>
           {currentPage === "predictions" && (
             <>
+              <button type="button" onClick={() => setMainPage("choose")}>
+                Back
+              </button>
               <button
                 onClick={() =>
                   nextPage(predictions, "final", "No predictions made")
@@ -500,205 +507,267 @@ const CreateChallenge: React.FC<GamesInterface> = ({
               >
                 Next
               </button>
-              <button type="button" onClick={() => setMainPage("choose")}>
-                Back
-              </button>
-              {predictions && (
-                <ul className="predictionsMade">
-                  {predictions.map((prediction, index) => (
-                    <li key={index}>
-                      {Object.keys(prediction).map((key) => (
-                        <div key={key} className="predictedGames">
-                          {challenge === "WinXLoose" && (
-                            <p>
-                              {prediction[key].game.split(" vs ")[0]} <br />
-                              {prediction[key].prediction}
-                            </p>
-                          )}
-                          {challenge !== "WinXLoose" && (
-                            <>
-                              <p>{prediction[key].game}</p>
-                              <p>{prediction[key].prediction}</p>
-                            </>
-                          )}
-                          <p></p>
-                        </div>
-                      ))}
-                    </li>
-                  ))}
-                </ul>
-              )}
+
               <ul className="challengeType">
-                {challenge === "WinXLoose" && (
-                  <>
-                    {allGames.map((game, index) => (
-                      <li key={index}>
-                        <p>
-                          {game.homeTeam.team} {game.homeTeamScore}vs{" "}
-                          {game.awayTeam.team} {game.awayTeamScore}
-                        </p>
+                {allGames.map((game, index) => {
+                  const gameId = `${game.homeTeam.team}-vs-${game.awayTeam.team}`;
+                  const selectedPrediction = selectedPredictions[gameId];
 
-                        <div>
-                          Home Team
-                          <button
-                            onClick={() => {
-                              addPrediction(user, "win", game);
+                  return (
+                    <>
+                      {challenge === "WinXLoose" && (
+                        <li key={index}>
+                          <div className="winXloose">
+                            <p
+                              onClick={() => {
+                                const prediction = `${game.homeTeam.team} win`;
+                                addPrediction(user, prediction, game);
+                                setSelectedPredictions((prev) => ({
+                                  ...prev,
+                                  [gameId]: prediction,
+                                }));
+                              }}
+                              className={
+                                selectedPrediction ===
+                                `${game.homeTeam.team} win`
+                                  ? "selectedTeam"
+                                  : ""
+                              }
+                            >
+                              {game.homeTeam.team} {game.homeTeamScore}
+                            </p>
+                            <p
+                              onClick={() => {
+                                const prediction = "draw";
+                                addPrediction(user, prediction, game);
+                                setSelectedPredictions((prev) => ({
+                                  ...prev,
+                                  [gameId]: prediction,
+                                }));
+                              }}
+                              className={
+                                selectedPrediction === "draw"
+                                  ? "selectedTeam"
+                                  : ""
+                              }
+                            >
+                              Draw
+                            </p>
+                            <p
+                              onClick={() => {
+                                const prediction = `${game.awayTeam.team} win`;
+                                addPrediction(user, prediction, game);
+                                setSelectedPredictions((prev) => ({
+                                  ...prev,
+                                  [gameId]: prediction,
+                                }));
+                              }}
+                              className={
+                                selectedPrediction ===
+                                `${game.awayTeam.team} win`
+                                  ? "selectedTeam"
+                                  : ""
+                              }
+                            >
+                              {game.awayTeam.team} {game.awayTeamScore}
+                            </p>
+                          </div>
+                        </li>
+                      )}
+                      {challenge === "ScorePredictions" && (
+                        <li key={index}>
+                          <form
+                            className="predictionForm"
+                            onSubmit={(event) => {
+                              handleScores(event, user, game, gameId);
                             }}
-                            type="button"
                           >
-                            Win
-                          </button>
-                          <button
-                            onClick={() => {
-                              addPrediction(user, "draw", game);
-                            }}
-                            type="button"
-                          >
-                            Draw
-                          </button>
-                          <button
-                            onClick={() => {
-                              addPrediction(user, "loose", game);
-                            }}
-                            type="button"
-                          >
-                            Loose
-                          </button>
-                        </div>
-                      </li>
-                    ))}
-                  </>
-                )}
-                {challenge === "ScorePredictions" && (
-                  <>
-                    {allGames.map((game, index) => (
-                      <li key={index}>
-                        <p>
-                          {game.homeTeam.team} {game.homeTeamScore}vs{" "}
-                          {game.awayTeam.team} {game.awayTeamScore}
-                        </p>
+                            <label>
+                              {game.homeTeam.team} {game.homeTeamScore}
+                              <input
+                                required
+                                type="text"
+                                placeholder="home goals"
+                                name="home goals"
+                                onChange={(e) => setHomeGoals(e.target.value)}
+                              />
+                            </label>
+                            <p>vs</p>
+                            <label>
+                              {game.awayTeam.team} {game.awayTeamScore}
+                              <input
+                                required
+                                type="text "
+                                placeholder="away goals"
+                                name="away goals"
+                                onChange={(e) => setAwayGoals(e.target.value)}
+                              ></input>
+                            </label>
+                            <button
+                              type="submit"
+                              className={
+                                selectedPrediction ===
+                                `${game.homeTeam} [${homeGoals}] vs ${game.awayTeam} [${awayGoals}]`
+                                  ? "selectedTeam"
+                                  : ""
+                              }
+                            >
+                              Confirm
+                            </button>
+                          </form>
+                        </li>
+                      )}
+                      {challenge === "TotalGoalsScored" && (
+                        <li key={index}>
+                          <p>
+                            {game.homeTeam.team} {game.homeTeamScore}vs{" "}
+                            {game.awayTeam.team} {game.awayTeamScore}
+                          </p>
 
-                        <form
-                          onSubmit={(event) => {
-                            handleScores(event, user, game);
-                          }}
-                        >
-                          <label>
-                            <input
-                              required
-                              type="text"
-                              placeholder="home goals"
-                              name="home goals"
-                            />
-                          </label>
-                          <p>vs</p>
-                          <label>
-                            <input
-                              required
-                              type="text "
-                              placeholder="away goals"
-                              name="away goals"
-                            ></input>
-                          </label>
-                          <button type="submit">Set</button>
-                        </form>
-                      </li>
-                    ))}
-                  </>
-                )}
-                {challenge === "TotalGoalsScored" && (
-                  <>
-                    {allGames.map((game, index) => (
-                      <li key={index}>
-                        <p>
-                          {game.homeTeam.team} {game.homeTeamScore}vs{" "}
-                          {game.awayTeam.team} {game.awayTeamScore}
-                        </p>
-
-                        <div>
-                          <button
-                            onClick={() => {
-                              addPrediction(user, "Under 0.5", game);
-                            }}
-                            type="button"
-                          >
-                            Under 0.5
-                          </button>
-                          <button
-                            onClick={() => {
-                              addPrediction(user, "Under 1.5", game);
-                            }}
-                            type="button"
-                          >
-                            Under 1.5
-                          </button>
-                          <button
-                            onClick={() => {
-                              addPrediction(user, "Under 2.5", game);
-                            }}
-                            type="button"
-                          >
-                            Under 2.5
-                          </button>
-
-                          <button
-                            onClick={() => {
-                              addPrediction(user, "Over 1.5", game);
-                            }}
-                            type="button"
-                          >
-                            Over 1.5
-                          </button>
-                          <button
-                            onClick={() => {
-                              addPrediction(user, "Over 2.5", game);
-                            }}
-                            type="button"
-                          >
-                            Over 2.5
-                          </button>
-                          <button
-                            onClick={() => {
-                              addPrediction(user, "Over 3.5", game);
-                            }}
-                            type="button"
-                          >
-                            Over 3.5
-                          </button>
-                        </div>
-                      </li>
-                    ))}
-                  </>
-                )}
-                {challenge === "WhoToScore" && (
-                  <>
-                    {allGames.map((game, index) => (
-                      <li key={index}>
-                        <p>
-                          {game.homeTeam.team} {game.homeTeamScore}vs{" "}
-                          {game.awayTeam.team} {game.awayTeamScore}
-                        </p>
-
-                        <div>
-                          {[
-                            ...game.homeTeam.players,
-                            ...game.awayTeam.players,
-                          ].map((player, index) => (
+                          <div>
                             <button
                               onClick={() => {
-                                addPrediction(user, player, game);
+                                addPrediction(user, "Under 0.5", game);
+                                setSelectedPredictions((prev) => ({
+                                  ...prev,
+                                  [gameId]: "Under 0.5",
+                                }));
                               }}
                               type="button"
-                              key={index}
+                              className={
+                                selectedPrediction === "Under 0.5"
+                                  ? "selectedTeam"
+                                  : ""
+                              }
                             >
-                              {player}{" "}
+                              Under 0.5
                             </button>
-                          ))}
-                        </div>
-                      </li>
-                    ))}
-                  </>
-                )}
+                            <button
+                              onClick={() => {
+                                addPrediction(user, "Under 1.5", game);
+                                setSelectedPredictions((prev) => ({
+                                  ...prev,
+                                  [gameId]: "Under 1.5",
+                                }));
+                              }}
+                              type="button"
+                              className={
+                                selectedPrediction === "Under 1.5"
+                                  ? "selectedTeam"
+                                  : ""
+                              }
+                            >
+                              Under 1.5
+                            </button>
+                            <button
+                              onClick={() => {
+                                addPrediction(user, "Under 2.5", game);
+                                setSelectedPredictions((prev) => ({
+                                  ...prev,
+                                  [gameId]: "Under 2.5",
+                                }));
+                              }}
+                              type="button"
+                              className={
+                                selectedPrediction === "Under 2.5"
+                                  ? "selectedTeam"
+                                  : ""
+                              }
+                            >
+                              Under 2.5
+                            </button>
+
+                            <button
+                              onClick={() => {
+                                addPrediction(user, "Over 1.5", game);
+                                setSelectedPredictions((prev) => ({
+                                  ...prev,
+                                  [gameId]: "Over 1.5",
+                                }));
+                              }}
+                              type="button"
+                              className={
+                                selectedPrediction === "Over 1.5"
+                                  ? "selectedTeam"
+                                  : ""
+                              }
+                            >
+                              Over 1.5
+                            </button>
+                            <button
+                              onClick={() => {
+                                addPrediction(user, "Over 2.5", game);
+                                setSelectedPredictions((prev) => ({
+                                  ...prev,
+                                  [gameId]: "Over 2.5",
+                                }));
+                              }}
+                              type="button"
+                              className={
+                                selectedPrediction === "Over 2.5"
+                                  ? "selectedTeam"
+                                  : ""
+                              }
+                            >
+                              Over 2.5
+                            </button>
+                            <button
+                              onClick={() => {
+                                addPrediction(user, "Over 3.5", game);
+                                setSelectedPredictions((prev) => ({
+                                  ...prev,
+                                  [gameId]: "Over 3.5",
+                                }));
+                              }}
+                              type="button"
+                              className={
+                                selectedPrediction === "Over 3.5"
+                                  ? "selectedTeam"
+                                  : ""
+                              }
+                            >
+                              Over 3.5
+                            </button>
+                          </div>
+                        </li>
+                      )}
+                      {challenge === "WhoToScore" && (
+                        <li key={index}>
+                          <p>
+                            {game.homeTeam.team} {game.homeTeamScore}vs{" "}
+                            {game.awayTeam.team} {game.awayTeamScore}
+                          </p>
+
+                          <div>
+                            {[
+                              ...game.homeTeam.players,
+                              ...game.awayTeam.players,
+                            ].map((player, index) => (
+                              <button
+                                onClick={() => {
+                                  addPrediction(user, player, game);
+                                  setSelectedPredictions((prev) => ({
+                                    ...prev,
+                                    [gameId]: player,
+                                  }));
+                                }}
+                                type="button"
+                                key={index}
+                                className={
+                                  selectedPrediction === player
+                                    ? "selectedTeam"
+                                    : ""
+                                }
+                              >
+                                {player}{" "}
+                              </button>
+                            ))}
+                          </div>
+                        </li>
+                      )}
+                    </>
+                  );
+                })}
               </ul>
             </>
           )}
@@ -717,11 +786,11 @@ const CreateChallenge: React.FC<GamesInterface> = ({
                   nextPage(challengeName, "complete", "Name your challenge")
                 }
               >
-                Proceed
+                Next
               </button>
 
               <label>
-                <p>Name that will be visible when you share the challenge</p>
+                <p>WHat would you like to name your group challenge</p>
                 <input
                   required
                   type="text"
@@ -731,7 +800,7 @@ const CreateChallenge: React.FC<GamesInterface> = ({
                 />
               </label>
               <label>
-                <p>How much would you like to set as stake?</p>
+                <p>Would you like to set a stake</p>
                 <input
                   required
                   type="number"
@@ -742,23 +811,6 @@ const CreateChallenge: React.FC<GamesInterface> = ({
                   }}
                 />
               </label>
-              {predictions && (
-                <>
-                  <ul>
-                    {predictions.map((prediction, index) => (
-                      <li key={index}>
-                        {Object.keys(prediction).map((key) => (
-                          <div key={key}>
-                            <p>{key}:</p>
-                            <p>{prediction[key].game}</p>
-                            <p>{prediction[key].prediction}</p>
-                          </div>
-                        ))}
-                      </li>
-                    ))}
-                  </ul>
-                </>
-              )}
             </div>
           )}
 
@@ -781,7 +833,9 @@ const CreateChallenge: React.FC<GamesInterface> = ({
                   />
                 )}
               </label>
-
+              <button type="button" onClick={cancelChallenge}>
+                Cancel
+              </button>
               <button
                 type="button"
                 onClick={() =>
@@ -798,9 +852,6 @@ const CreateChallenge: React.FC<GamesInterface> = ({
               >
                 Create
               </button>
-              <button type="button" onClick={cancelChallenge}>
-                Cancel
-              </button>
             </div>
           )}
           {currentPage === "payment" && userDetails && (
@@ -809,7 +860,7 @@ const CreateChallenge: React.FC<GamesInterface> = ({
                 Back
               </button>
               <button type="button" onClick={giveUpChallenge}>
-                Give Up
+                Cancel
               </button>
               <p>Current Amount in Account : {userDetails.account}</p>
               <p>Amount needed for the stake : {stake}</p>

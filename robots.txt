@@ -1,0 +1,4 @@
+User-agent: *
+Disallow: /login
+Allow: /
+Sitemap: https://kickoff-challenge-football.web.app/sitemap.xml

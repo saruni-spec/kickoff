@@ -29,10 +29,13 @@ interface GameDetails {
   played: boolean;
 }
 
+type prediction = string;
+type game = string;
+
 interface UserPrediction {
-  game: string;
-  prediction: string;
+  [game: game]: prediction;
 }
+
 interface Predictions {
   [key: string]: UserPrediction;
 }
@@ -48,7 +51,7 @@ interface Challenge {
   challenge: string;
   gamesInPrediction: GameDetails[];
   stake: number;
-  predictions: Predictions[];
+  predictions: Predictions;
   status: "active" | "closed";
   createdBy: string;
   members: string[];
@@ -61,12 +64,14 @@ interface profileProps {
   joinedChallenges: Challenge[] | null;
   setUserDetails: (userDetails: userDetails | null) => void;
   setLoading: (loading: boolean) => void;
+  setUser: (user: string) => void;
   setMainPage: (page: string) => void;
 }
 
 const Profile: React.FC<profileProps> = ({
   userEmail,
   userDetails,
+  setUser,
   joinedChallenges,
   setUserDetails,
   setLoading,
@@ -154,17 +159,28 @@ const Profile: React.FC<profileProps> = ({
     if (amount === "" || userDetails === null || userDetails === undefined) {
       alert("Please Enter Amount");
     } else {
-      if (Number(amount) > Number(userDetails.account)) {
-        alert("Insufficient Funds");
+      if (Number(amount) > Number(0.95) * Number(userDetails.account)) {
+        if (
+          Number(amount) === Number(userDetails.account) ||
+          Number(amount) > Number(0.9) * Number(userDetails.account)
+        ) {
+          alert(
+            "Insufficient Funds, You can only withdraw 95% of your account balance"
+          );
+        } else {
+          alert("Insufficient Funds");
+        }
+
         return;
       }
+      const withdraw = Number(0.95) * Number(amount);
       try {
         const response = await axios.post(
           "https://uttermost-pointy-bearskin.glitch.me//api/withdraw",
           {
             email: userDetails?.email,
             phone: userDetails?.phone,
-            amount: amount,
+            amount: withdraw.toString(),
             narrative: "User withdrawal",
           }
         );
@@ -186,7 +202,9 @@ const Profile: React.FC<profileProps> = ({
         console.log("User signed out");
         setLoading(true);
         setUserDetails(null);
+        setUser("");
         setMainPage("home");
+        navigate("/");
       },
       (error) => {
         // An error happened.
@@ -318,7 +336,6 @@ const Profile: React.FC<profileProps> = ({
 
               {joinedChallenges && (
                 <div>
-                  <h3>My Groups</h3>
                   <ul className="groupList">
                     {joinedChallenges.map((challenge, index) => (
                       <li key={index}>

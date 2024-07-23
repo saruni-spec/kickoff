@@ -20,7 +20,7 @@ interface TeamDetails {
   players: string[];
 }
 
-interface gameDetails {
+interface GameDetails {
   gameId: string;
   homeTeam: TeamDetails;
   homeTeamScore: string;
@@ -31,9 +31,11 @@ interface gameDetails {
   level: string;
   played: boolean;
 }
+type prediction = string;
+type game = string;
+
 interface UserPrediction {
-  game: string;
-  prediction: string;
+  [game: game]: prediction;
 }
 
 interface Predictions {
@@ -43,9 +45,9 @@ interface Predictions {
 interface Challenge {
   name: string;
   challenge: string;
-  gamesInPrediction: gameDetails[];
+  gamesInPrediction: GameDetails[];
   stake: number;
-  predictions: Predictions[];
+  predictions: Predictions;
   status: "active" | "closed";
   createdBy: string;
   members: string[];
@@ -63,7 +65,10 @@ interface userDetails {
 const JoinChallenge = () => {
   const [currentPage, setCurrentPage] = useState("join");
   const [currentChallenge, setCurrentChallenge] = useState<Challenge>();
-  const [predictions, setPredictions] = useState<Predictions[]>([]);
+  const [userPredictions, setUserPredictions] = useState<UserPrediction | null>(
+    null
+  );
+  const [predictions, setPredictions] = useState<Predictions | null>(null);
   const [phone, setPhone] = useState<string>("");
   const [accountUpdated, setAccountUpdated] = useState(false);
   const [user, setUser] = useState("");
@@ -76,49 +81,29 @@ const JoinChallenge = () => {
   const addPrediction = (
     user: string,
     newPredictionValue: string,
-    newPredictionKey: gameDetails
+    newPredictionKey: GameDetails
   ) => {
-    const newPrediction = {
-      [user]: {
-        game: `${newPredictionKey.homeTeam.team} vs ${newPredictionKey.awayTeam.team}`,
-        prediction: newPredictionValue,
-      },
-    };
+    setUserPredictions((prevPredictions) => ({
+      ...(prevPredictions || {}),
+      [`${newPredictionKey.homeTeam.team} vs ${newPredictionKey.awayTeam.team}`]:
+        newPredictionValue,
+    }));
 
-    const alreadyExists = predictions.some((prediction) => {
-      const key = Object.keys(prediction)[0];
-      return prediction[key].game === newPrediction[user].game;
+    setPredictions((prevPredictions) => {
+      const updatedUserPredictions = {
+        ...(userPredictions || {}),
+        [`${newPredictionKey.homeTeam.team} vs ${newPredictionKey.awayTeam.team}`]:
+          newPredictionValue,
+      };
+      return {
+        ...(prevPredictions || {}),
+        [user]: updatedUserPredictions,
+      };
     });
-
-    if (alreadyExists) {
-      const updatedPredictions = predictions.map((prediction) => {
-        const key = Object.keys(prediction)[0];
-        if (prediction[key].game === newPrediction[user].game) {
-          if (prediction[key].prediction !== newPrediction[user].prediction) {
-            // Update the prediction value
-            return {
-              [key]: {
-                ...prediction[key],
-                prediction: newPredictionValue,
-              },
-            };
-          }
-          // Return the original prediction if the value hasn't changed
-          return prediction;
-        }
-        return prediction;
-      });
-
-      setPredictions(updatedPredictions);
-    } else {
-      setPredictions((prevPredictions) => [...prevPredictions, newPrediction]);
-    }
-    console.log(predictions, "prediction added");
   };
-
   const handleScores = (
     event: React.FormEvent<HTMLFormElement>,
-    game: gameDetails
+    game: GameDetails
   ) => {
     event.preventDefault();
     const formData = new FormData(event.currentTarget);
@@ -147,7 +132,7 @@ const JoinChallenge = () => {
   const joinCurrentChallenge = async (
     currentChallenge: Challenge,
     userId: string,
-    predictions: Predictions[]
+    predictions: Predictions
   ) => {
     try {
       const queryBy = {
@@ -177,10 +162,10 @@ const JoinChallenge = () => {
       const challengeDoc = querySnapshot.docs[0];
 
       // Update the document with the new prediction
-      const updatedPredictions = [
+      const updatedPredictions = {
         ...currentChallenge.predictions,
-        ...predictions, // Add the new prediction for this user
-      ];
+        predictions, // Add the new prediction for this user
+      };
 
       const updatedMembers = [...currentChallenge.members, userId];
 
@@ -192,7 +177,7 @@ const JoinChallenge = () => {
       });
 
       alert(`You haved joined ${currentChallenge.name}`);
-      setPredictions([]);
+      setPredictions(null);
       navigate("/");
     } catch (error) {
       console.error("Error adding prediction:", error);
@@ -250,7 +235,7 @@ const JoinChallenge = () => {
     currentChallenge: Challenge,
     userDetails: userDetails,
 
-    predictions: Predictions[]
+    predictions: Predictions
   ) => {
     if (Number(userDetails.account) >= Number(currentChallenge.stake)) {
       joinCurrentChallenge(currentChallenge, userDetails.email, predictions);
@@ -263,7 +248,7 @@ const JoinChallenge = () => {
 
   const makePayment = async (
     currentChallenge: Challenge,
-    predictions: Predictions[],
+    predictions: Predictions,
     phone: string,
     userDetails: userDetails | null
   ) => {
@@ -274,16 +259,23 @@ const JoinChallenge = () => {
     }
   };
 
-  const proceedToPredictions = (predictions: Predictions[]) => {
-    if (predictions.length === currentChallenge?.predictions.length) {
-      setCurrentPage("view");
+  const proceedToPredictions = (predictions: Predictions | null) => {
+    if (currentChallenge && predictions) {
+      if (
+        Object.keys(predictions).length ===
+        Object.keys(currentChallenge.predictions).length
+      ) {
+        setCurrentPage("view");
+      } else {
+        alert("Please make all predictions");
+      }
     } else {
-      alert("Please make all predictions");
+      alert("No challenge to join");
     }
   };
 
   const giveup = () => {
-    setPredictions([]);
+    setPredictions(null);
     navigate("/");
   };
 
@@ -473,22 +465,20 @@ const JoinChallenge = () => {
                   <p>The Stake set in this Challenge is</p>
                   <p>{joinDetails.stake} </p>
                 </label>
-                {predictions && (
-                  <>
-                    <ul className="predictionsMade">
-                      {predictions.map((prediction, index) => (
+                {userPredictions && (
+                  <ul className="predictionsMade">
+                    {Object.entries(userPredictions).map(
+                      ([game, prediction], index) => (
                         <li key={index}>
-                          {Object.keys(prediction).map((key) => (
-                            <div key={key} className="predictedGames">
-                              <p>{key}:</p>
-                              <p>{prediction[key].game}</p>
-                              <p>{prediction[key].prediction}</p>
-                            </div>
-                          ))}
+                          <div className="predictedGames">
+                            <p>
+                              {game}: {prediction}
+                            </p>
+                          </div>
                         </li>
-                      ))}
-                    </ul>
-                  </>
+                      )
+                    )}
+                  </ul>
                 )}
               </div>
             )}
@@ -567,23 +557,20 @@ const JoinChallenge = () => {
                     Give up
                   </button>
                 </div>
-
-                {predictions && (
-                  <>
-                    <ul className="predictionsMade">
-                      {predictions.map((prediction, index) => (
+                {userPredictions && (
+                  <ul className="predictionsMade">
+                    {Object.entries(userPredictions).map(
+                      ([game, prediction], index) => (
                         <li key={index}>
-                          {Object.keys(prediction).map((key) => (
-                            <div key={key} className="predictedGames">
-                              <p>{key}:</p>
-                              <p>{prediction[key].game}</p>
-                              <p>{prediction[key].prediction}</p>
-                            </div>
-                          ))}
+                          <div className="predictedGames">
+                            <p>
+                              {game}: {prediction}
+                            </p>
+                          </div>
                         </li>
-                      ))}
-                    </ul>
-                  </>
+                      )
+                    )}
+                  </ul>
                 )}
 
                 <ul className="challengeType">
@@ -793,22 +780,20 @@ const JoinChallenge = () => {
                   <p>The Stake set in this Challenge is</p>
                   <p>{currentChallenge.stake} </p>
                 </label>
-                {predictions && (
-                  <>
-                    <ul>
-                      {predictions.map((prediction, index) => (
+                {userPredictions && (
+                  <ul className="predictionsMade">
+                    {Object.entries(userPredictions).map(
+                      ([game, prediction], index) => (
                         <li key={index}>
-                          {Object.keys(prediction).map((key) => (
-                            <div key={key}>
-                              <p>{key}:</p>
-                              <p>{prediction[key].game}</p>
-                              <p>{prediction[key].prediction}</p>
-                            </div>
-                          ))}
+                          <div className="predictedGames">
+                            <p>
+                              {game}: {prediction}
+                            </p>
+                          </div>
                         </li>
-                      ))}
-                    </ul>
-                  </>
+                      )
+                    )}
+                  </ul>
                 )}
               </div>
             )}

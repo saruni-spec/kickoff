@@ -1,0 +1,102 @@
+
+  .hero-section {
+    background-color: #282c34;
+    color: #fff;
+    padding: 2rem 1.2rem;
+  }
+  
+  .hero-section h1 {
+    font-size: 2.5em;
+    margin-bottom: 1.2rem;
+  }
+  
+  .hero-section p {
+    font-size: 1.2em;
+    margin-bottom: 2rem;
+  }
+  
+  .cta-button {
+    display: inline-block;
+    padding: 1rem 1.8rem;
+    background-color: #61dafb;
+    color: #282c34;
+    text-decoration: none;
+    border-radius: 5px;
+    font-size: 1.2em;
+  }
+  
+  .cta-button:hover {
+    background-color: #21a1f1;
+  }
+  
+  .how-it-works, .rewards {
+    padding: 2rem 1.2rem;
+  }
+  
+  .how-it-works h2, .rewards h2 {
+    font-size: 2em;
+    margin-bottom: 1.2rem;
+  }
+  
+  .steps {
+    display: flex;
+    justify-content: center;
+    gap: 1.2rem;
+  }
+  
+  .step {
+    background-color: #f9f9f9;
+    padding: 1.2rem;
+    border-radius: 0.8rem;
+    width: 30%;
+  }
+  
+  .step h3 {
+    font-size: 1.5em;
+    margin-bottom: 0.8rem;
+  }
+  
+  .rewards-details {
+    display: flex;
+    justify-content: center;
+    gap: 1.2rem;
+  }
+  
+  .reward-item {
+    background-color: #f9f9f9;
+    padding: 1.2rem;
+    border-radius: 0.8rem;
+    width: 30%;
+  }
+  
+  .reward-item h3 {
+    font-size: 1.5em;
+    margin-bottom: 0.8rem;
+  }
+  
+  .footer {
+    background-color: #282c34;
+    color: #fff;
+    padding: 1.5rem 1.2rem;
+  }
+  
+  .footer p {
+    font-size: 1.2em;
+    margin-bottom: 1.2rem;
+  }
+
+  @media screen and (max-width: 768px) {
+    .steps, .rewards-details {
+      flex-direction: column;
+      align-items: center;
+     
+    }
+    .reward-item {
+      width: 80%;
+    }
+    .step {
+      width: 80%;
+    }
+    
+  }
+  

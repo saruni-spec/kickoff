@@ -12,6 +12,7 @@ import { useEffect, useState } from "react";
 import Profile from "./pages/Profile";
 import Loading from "./components/Loading";
 import { useNavigate } from "react-router-dom";
+import MainPage from "./pages/MainPage";
 
 interface TeamDetails {
   team: string;
@@ -29,10 +30,13 @@ interface GameDetails {
   played: boolean;
 }
 
+type prediction = string;
+type game = string;
+
 interface UserPrediction {
-  game: string;
-  prediction: string;
+  [game: game]: prediction;
 }
+
 interface Predictions {
   [key: string]: UserPrediction;
 }
@@ -40,7 +44,7 @@ interface ChallengeDetails {
   name: string;
   stake: string;
   gamesChosen: GameDetails[];
-  predictions: Predictions[];
+  predictions: Predictions;
   challenge: string | null;
 }
 interface userDetails {
@@ -54,7 +58,7 @@ interface Challenge {
   challenge: string;
   gamesInPrediction: GameDetails[];
   stake: number;
-  predictions: Predictions[];
+  predictions: Predictions;
   status: "active" | "closed";
   createdBy: string;
   members: string[];
@@ -178,14 +182,11 @@ function Home() {
     );
     setNotJoinedChallenges(notJoinedChallenges);
 
-    const userChallenges = challenges.filter(
-      (challenge) => challenge.createdBy === user
-    );
     const memberChallenges = challenges.filter((challenge) =>
       challenge.members.includes(user)
     );
-    const allUserChallenges = [...userChallenges, ...memberChallenges];
-    setJoinedChallenges(allUserChallenges);
+
+    setJoinedChallenges(memberChallenges);
   };
 
   const getChallenges = async (user: string) => {
@@ -258,7 +259,7 @@ function Home() {
     }, 1500);
 
     return () => clearTimeout(timeoutId);
-  }, [loading]);
+  }, [loading, user]);
 
   return (
     <>
@@ -277,92 +278,138 @@ function Home() {
           </li>
         </ul>
       </nav>
-      <div className="container">
-        <ul className="sideMenu">
-          <li
-            className={currentPage === "choose" ? "selected" : ""}
-            onClick={() => setCurrentPage("choose")}
-          >
-            Create
-          </li>
-          <li
-            className={currentPage === "view" ? "selected" : ""}
-            onClick={() => setCurrentPage("view")}
-          >
-            View
-          </li>
-          <li
-            className={currentPage === "profile" ? "selected" : ""}
-            onClick={() => setCurrentPage("profile")}
-          >
-            Profile
-          </li>
-          <li
-            className={currentPage === "about" ? "selected" : ""}
-            onClick={() => setCurrentPage("about")}
-          >
-            About
-          </li>
-        </ul>
-        <div className="home-div">
-          {loading ? (
-            <Loading />
-          ) : (
-            <>
-              {currentPage === "home" && games && (
-                <Games
-                  gamesToday={gamesToday}
-                  gamesUpcoming={gamesUpcoming}
-                  games={games}
-                  gamesYesterday={gamesYesterday}
-                />
-              )}
-              {currentPage === "choose" && (
-                <ChooseChallenge
-                  user={user}
-                  setCurrentPage={setCurrentPage}
-                  challengeDetails={challengeDetails}
-                />
-              )}
-              {currentPage === "view" && (
-                <Challenges
-                  user={user}
-                  userDetails={userDetails}
-                  setMainPage={setCurrentPage}
-                  joinedChallenges={joinedChallenges}
-                  notJoinedChallenges={notJoinedChallenges}
-                />
-              )}
-              {currentPage === "about" && <About />}
 
-              {currentPage === "create" && (
-                <CreateChallenge
-                  user={user}
-                  gamesToday={gamesToday}
-                  gamesUpcoming={gamesUpcoming}
-                  setMainPage={setCurrentPage}
-                  userDetails={userDetails}
-                  setUserDetails={setUserDetails}
-                  setChallengeDetails={setChallengeDetails}
-                  challengeDetails={challengeDetails}
-                  setLoading={setLoading}
-                />
-              )}
-              {currentPage === "profile" && (
+      <div className="container">
+        {user === "" ? (
+          <>
+            <ul className="sideMenu">
+              <li
+                className={currentPage === "challenges" ? "selected" : ""}
+                onClick={() => setCurrentPage("challenges")}
+              >
+                Top Challenges
+              </li>
+              <li
+                className={currentPage === "login" ? "selected" : ""}
+                onClick={() => navigate("/login")}
+              >
+                Create Challenge
+              </li>
+              <li
+                className={currentPage === "about" ? "selected" : ""}
+                onClick={() => setCurrentPage("about")}
+              >
+                About
+              </li>
+            </ul>
+
+            <div className="home-div">
+              {loading ? (
+                <Loading />
+              ) : (
                 <>
-                  <Profile
-                    joinedChallenges={joinedChallenges}
-                    userDetails={userDetails}
-                    setUserDetails={setUserDetails}
-                    userEmail={user}
-                    setLoading={setLoading}
-                    setMainPage={setCurrentPage}
-                  />
+                  {currentPage === "home" && <MainPage />}
+                  {currentPage === "challenges" && notJoinedChallenges && (
+                    <Challenges
+                      user={user}
+                      userDetails={userDetails}
+                      setMainPage={setCurrentPage}
+                      joinedChallenges={joinedChallenges}
+                      notJoinedChallenges={notJoinedChallenges}
+                    />
+                  )}
+                  {currentPage === "win" && <h1>WinXLoose</h1>}
+                  {currentPage === "goals" && <h1>Total Goals Scored</h1>}
+                  {currentPage === "score" && <h1>Score Prediction</h1>}
+                  {currentPage === "player" && <h1>Who to Score</h1>}
+                  {currentPage === "about" && <About />}
                 </>
               )}
-            </>
-          )}
-        </div>
+            </div>
+          </>
+        ) : (
+          <>
+            <ul className="sideMenu">
+              <li
+                className={currentPage === "choose" ? "selected" : ""}
+                onClick={() => setCurrentPage("choose")}
+              >
+                Create
+              </li>
+
+              <li
+                className={currentPage === "view" ? "selected" : ""}
+                onClick={() => setCurrentPage("view")}
+              >
+                View
+              </li>
+              <li
+                className={currentPage === "profile" ? "selected" : ""}
+                onClick={() => setCurrentPage("profile")}
+              >
+                Profile
+              </li>
+            </ul>
+            <div className="home-div">
+              {loading ? (
+                <Loading />
+              ) : (
+                <>
+                  {currentPage === "home" && games && (
+                    <Games
+                      gamesToday={gamesToday}
+                      gamesUpcoming={gamesUpcoming}
+                      games={games}
+                      gamesYesterday={gamesYesterday}
+                    />
+                  )}
+                  {currentPage === "choose" && (
+                    <ChooseChallenge
+                      user={user}
+                      setCurrentPage={setCurrentPage}
+                      challengeDetails={challengeDetails}
+                    />
+                  )}
+                  {currentPage === "view" && (
+                    <Challenges
+                      user={user}
+                      userDetails={userDetails}
+                      setMainPage={setCurrentPage}
+                      joinedChallenges={joinedChallenges}
+                      notJoinedChallenges={notJoinedChallenges}
+                    />
+                  )}
+
+                  {currentPage === "create" && (
+                    <CreateChallenge
+                      user={user}
+                      gamesToday={gamesToday}
+                      gamesUpcoming={gamesUpcoming}
+                      setMainPage={setCurrentPage}
+                      userDetails={userDetails}
+                      setUserDetails={setUserDetails}
+                      setChallengeDetails={setChallengeDetails}
+                      challengeDetails={challengeDetails}
+                      setLoading={setLoading}
+                    />
+                  )}
+
+                  {currentPage === "profile" && (
+                    <Profile
+                      joinedChallenges={joinedChallenges}
+                      userDetails={userDetails}
+                      setUserDetails={setUserDetails}
+                      userEmail={user}
+                      setLoading={setLoading}
+                      setUser={setUser}
+                      setMainPage={setCurrentPage}
+                    />
+                  )}
+                </>
+              )}
+            </div>
+          </>
+        )}
       </div>
     </>
   );

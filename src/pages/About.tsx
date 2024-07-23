@@ -1,10 +1,9 @@
+import "../styles/about.css";
+
 const About = () => {
   return (
-    <>
-      <header>
-        <h1>About Us</h1>
-      </header>
-      <section className="about">
+    <div className="about">
+      <section>
         <p>Welcome to Kick-Off Challenge!</p>
         <p>
           At Kick-Off Challenge, we believe in making sports predictions fun and
@@ -21,7 +20,7 @@ const About = () => {
         </p>
       </section>
 
-      <section className="terms">
+      <section>
         <h2>Terms and Conditions</h2>
 
         <h3>1. Eligibility</h3>
@@ -72,6 +71,7 @@ const About = () => {
             The group creator will clain 5% of the net possible winnings if they
             are not the winner
           </li>
+          <li>A 5% transaction fee is charged on every withdrawal</li>
         </ol>
 
         <h3>4. Payouts</h3>
@@ -126,7 +126,7 @@ const About = () => {
             information.
           </li>
         </ol>
-        <section className="privacy">
+        <section>
           <p>
             At Kick-Off Challenge, we are committed to protecting your privacy
             and ensuring that your personal information is handled safely and
@@ -277,7 +277,7 @@ const About = () => {
         <h3>11. Contact Us</h3>
         <p>If you have any questions about these Terms, please contact us.</p>
       </section>
-    </>
+    </div>
   );
 };
 
